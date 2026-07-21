@@ -1,0 +1,190 @@
+// アプリの起点となるファイル。
+// 各モジュール（state.js, screens.js など）を import してつなぎ合わせていく。
+
+import { SONGS } from "./data/songs.js";
+import { showScreen } from "./screens.js";
+import {
+  gameState,
+  resetGameState,
+  startQuiz,
+  getCurrentQuestion,
+  recordAnswer,
+  advanceToNextQuestion,
+} from "./state.js";
+import {
+  filterSongsByCategory,
+  resolveQuestionCount,
+  validatePoolSize,
+  buildQuizQuestions,
+} from "./quiz.js";
+import { playSongIntro, stopAudio } from "./audio.js";
+import { startTimer, stopTimer } from "./timer.js";
+import { calculateScore } from "./score.js";
+
+console.log("=LOVE イントロクイズ: main.js が読み込まれました");
+
+const startErrorElement = document.getElementById("start-error");
+const questionProgressElement = document.getElementById("question-progress");
+const choiceButtonElements = document.querySelectorAll(".choice-button");
+const feedbackElement = document.getElementById("feedback");
+const nextButtonElement = document.getElementById("next-button");
+const audioErrorElement = document.getElementById("audio-error");
+const timerDisplayElement = document.getElementById("timer-display");
+const totalScoreElement = document.getElementById("total-score-display");
+const answerLogListElement = document.getElementById("answer-log-list");
+
+// 音源の再生に失敗したときの表示処理。
+// タイマーや得点処理は止めず、エラーメッセージを出すだけに留める。
+function showAudioError(message) {
+  audioErrorElement.textContent = message;
+  audioErrorElement.hidden = false;
+}
+
+// タイマーの残り秒数表示を更新する。
+function updateTimerDisplay(remainingSec) {
+  timerDisplayElement.textContent = `残り: ${remainingSec}秒`;
+}
+
+// 正解の選択肢に「is-correct」（キラキラ演出）、選んでしまった不正解の選択肢に
+// 「is-wrong」（シェイク演出）のクラスを付ける。selectedChoiceIdがnullなら
+// （＝時間切れで何も選んでいない）正解の表示だけを行う。
+function markChoiceButtons(selectedChoiceId) {
+  const question = getCurrentQuestion();
+  choiceButtonElements.forEach((button, index) => {
+    const choice = question.choices[index];
+    if (choice.id === question.song.id) {
+      button.classList.add("is-correct");
+    } else if (choice.id === selectedChoiceId) {
+      button.classList.add("is-wrong");
+    }
+  });
+}
+
+// 次の問題を表示する前に、前の問題の演出クラスを消しておく。
+function clearChoiceButtonStates() {
+  choiceButtonElements.forEach((button) => {
+    button.classList.remove("is-correct", "is-wrong");
+  });
+}
+
+// 制限時間切れになったときの処理。
+// 「回答なし＝不正解・0点」として記録し、正解を表示して次へ進めるようにする。
+function handleTimeout() {
+  // クリックとタイムアウトがほぼ同時に起きても二重に処理しないためのガード。
+  if (gameState.isAnswered) return;
+  gameState.isAnswered = true;
+
+  const question = getCurrentQuestion();
+  recordAnswer(false, 0);
+  markChoiceButtons(null);
+  feedbackElement.textContent = `時間切れ… 不正解（正解は「${question.song.title}」）`;
+  feedbackElement.hidden = false;
+  nextButtonElement.hidden = false;
+}
+
+// 選択肢ボタンをクリックしたときの処理。
+// 正解なら残り秒数に応じたスピードボーナス、不正解なら0点として記録する。
+function handleChoiceClick(selectedChoice) {
+  // タイムアウトとクリックがほぼ同時に起きても二重に処理しないためのガード。
+  if (gameState.isAnswered) return;
+  gameState.isAnswered = true;
+  stopTimer();
+
+  const question = getCurrentQuestion();
+  const isCorrect = selectedChoice.id === question.song.id;
+  const points = isCorrect ? calculateScore(gameState.remainingSec) : 0;
+  recordAnswer(isCorrect, points);
+  markChoiceButtons(selectedChoice.id);
+
+  feedbackElement.textContent = isCorrect
+    ? `正解！ +${points}点`
+    : `不正解…（正解は「${question.song.title}」）`;
+  feedbackElement.hidden = false;
+  nextButtonElement.hidden = false;
+}
+
+// 今の問題の内容（進捗・4択の曲名）をクイズ画面に反映し、イントロ音源とタイマーを開始する。
+function renderQuestion() {
+  const question = getCurrentQuestion();
+  questionProgressElement.textContent = `第${gameState.currentIndex + 1}問 / ${gameState.questions.length}問`;
+
+  choiceButtonElements.forEach((button, index) => {
+    button.textContent = question.choices[index].title;
+  });
+
+  feedbackElement.hidden = true;
+  nextButtonElement.hidden = true;
+  audioErrorElement.hidden = true;
+  clearChoiceButtonStates();
+
+  playSongIntro(question.song, showAudioError);
+  startTimer(updateTimerDisplay, handleTimeout);
+}
+
+// 結果画面に、合計得点と1問ごとの内訳を反映する。
+function renderResult() {
+  totalScoreElement.textContent = `合計得点: ${gameState.score}点`;
+
+  answerLogListElement.innerHTML = "";
+  gameState.answerLog.forEach((entry, index) => {
+    const item = document.createElement("li");
+    const resultLabel = entry.isCorrect ? "正解" : "不正解";
+    item.textContent = `第${index + 1}問「${entry.song.title}」: ${resultLabel}（${entry.pointsEarned}点）`;
+    answerLogListElement.appendChild(item);
+  });
+}
+
+// 4つの選択肢ボタンに、それぞれクリック時の処理を割り当てる。
+// ボタンの並び自体は固定なので、クリック時に「今の問題」の該当インデックスの選択肢を参照する。
+choiceButtonElements.forEach((button, index) => {
+  button.addEventListener("click", () => {
+    const question = getCurrentQuestion();
+    handleChoiceClick(question.choices[index]);
+  });
+});
+
+// スタートボタンを押したときの処理。
+// 出題数・カテゴリの選択を読み取り、出題可能な曲プールを絞り込んで検証してから、
+// 問題一式を生成してクイズを開始する。
+document.getElementById("start-button").addEventListener("click", () => {
+  const questionCountValue = document.querySelector('input[name="question-count"]:checked').value;
+  const categoryFilterValue = document.querySelector('input[name="category-filter"]:checked').value;
+
+  const pool = filterSongsByCategory(SONGS, categoryFilterValue);
+  const errorMessage = validatePoolSize(pool);
+
+  if (errorMessage) {
+    startErrorElement.textContent = errorMessage;
+    startErrorElement.hidden = false;
+    return;
+  }
+
+  startErrorElement.hidden = true;
+  const questionCount = resolveQuestionCount(questionCountValue, pool.length);
+  const questions = buildQuizQuestions(pool, questionCount);
+  startQuiz(questions);
+  renderQuestion();
+
+  showScreen("quiz");
+});
+
+document.getElementById("next-button").addEventListener("click", () => {
+  stopTimer();
+  stopAudio();
+
+  const hasMoreQuestions = advanceToNextQuestion();
+  if (hasMoreQuestions) {
+    renderQuestion();
+    return;
+  }
+
+  renderResult();
+  showScreen("result");
+});
+
+document.getElementById("retry-button").addEventListener("click", () => {
+  stopTimer();
+  stopAudio();
+  resetGameState();
+  showScreen("start");
+});
