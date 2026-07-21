@@ -290,16 +290,48 @@ fieldset label {
   color: var(--color-primary-dark);
 }
 
+#rank-display {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  margin: 4px 0 8px;
+}
+
+#high-score-display {
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--color-text);
+}
+
+#new-record-badge {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--color-primary-dark);
+  background-color: #fff8e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
 #answer-log-list {
   list-style: none;
   padding: 0;
 }
 
 #answer-log-list li {
-  background-color: var(--color-background-start);
   border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 6px;
+}
+
+/* 正解した問題は正解の選択肢と同じ黄色系トーンに、不正解は赤系トーンにして一目で分かるようにする */
+#answer-log-list li.is-correct-row {
+  background-color: #fff8e1;
+}
+
+#answer-log-list li.is-wrong-row {
+  background-color: #fff0ee;
 }
 
 /* ===== レスポンシブ：スマホ幅（520px以下） =====

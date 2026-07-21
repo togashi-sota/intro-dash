@@ -9,3 +9,14 @@ const BONUS_PER_SECOND = 10;
 export function calculateScore(remainingSec) {
   return BASE_SCORE + remainingSec * BONUS_PER_SECOND;
 }
+
+// 満点（全問を即答で正解した場合の得点）に対する達成率から、S/A/B/Cのランクを判定する。
+export function calculateRank(score, questionCount) {
+  const maxPossibleScore = questionCount * 200;
+  const achievementRate = score / maxPossibleScore;
+
+  if (achievementRate >= 0.9) return "S";
+  if (achievementRate >= 0.7) return "A";
+  if (achievementRate >= 0.5) return "B";
+  return "C";
+}

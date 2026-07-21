@@ -19,7 +19,8 @@ import {
 } from "./quiz.js";
 import { playSongIntro, stopAudio } from "./audio.js";
 import { startTimer, stopTimer } from "./timer.js";
-import { calculateScore } from "./score.js";
+import { calculateScore, calculateRank } from "./score.js";
+import { getHighScore, saveHighScoreIfBetter } from "./highscore.js";
 
 console.log("=LOVE イントロクイズ: main.js が読み込まれました");
 
@@ -31,6 +32,9 @@ const nextButtonElement = document.getElementById("next-button");
 const audioErrorElement = document.getElementById("audio-error");
 const timerDisplayElement = document.getElementById("timer-display");
 const totalScoreElement = document.getElementById("total-score-display");
+const rankElement = document.getElementById("rank-display");
+const highScoreElement = document.getElementById("high-score-display");
+const newRecordElement = document.getElementById("new-record-badge");
 const answerLogListElement = document.getElementById("answer-log-list");
 
 // 音源の再生に失敗したときの表示処理。
@@ -121,13 +125,19 @@ function renderQuestion() {
   startTimer(updateTimerDisplay, handleTimeout);
 }
 
-// 結果画面に、合計得点と1問ごとの内訳を反映する。
+// 結果画面に、合計得点・自己ベスト・1問ごとの内訳を反映する。
 function renderResult() {
   totalScoreElement.textContent = `合計得点: ${gameState.score}点`;
+  rankElement.textContent = `ランク: ${calculateRank(gameState.score, gameState.questions.length)}`;
+
+  const isNewRecord = saveHighScoreIfBetter(gameState.score);
+  highScoreElement.textContent = `自己ベスト: ${getHighScore()}点`;
+  newRecordElement.hidden = !isNewRecord;
 
   answerLogListElement.innerHTML = "";
   gameState.answerLog.forEach((entry, index) => {
     const item = document.createElement("li");
+    item.classList.add(entry.isCorrect ? "is-correct-row" : "is-wrong-row");
     const resultLabel = entry.isCorrect ? "正解" : "不正解";
     item.textContent = `第${index + 1}問「${entry.song.title}」: ${resultLabel}（${entry.pointsEarned}点）`;
     answerLogListElement.appendChild(item);
