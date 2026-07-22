@@ -14,13 +14,14 @@ export const CATEGORY = {
 // title   : クイズの選択肢や正解表示に使う曲名
 // category: CATEGORY で定義した値のどれか
 //
-// 【今はダミー5曲】実在する楽曲データに差し替える際は、この配列に要素を追加していくだけでよい。
-// 最初の動作確認用として、5曲すべて同じカテゴリ（表題曲）に揃えている。
+// 著作権が切れた誰もが知っているメロディを、電子音として自作したものを収録している。
+// 実在する楽曲データに差し替える際は、この配列に要素を追加していくだけでよい。
+// 今は5曲すべて同じカテゴリ（表題曲）に揃えている。
 // カテゴリで絞り込んだときに曲が4未満になる挙動は、後の実装ステップで別途テストする。
 export const SONGS = [
-  { id: "dummy-1", title: "ダミー曲1", category: CATEGORY.TITLE_TRACK },
-  { id: "dummy-2", title: "ダミー曲2", category: CATEGORY.TITLE_TRACK },
-  { id: "dummy-3", title: "ダミー曲3", category: CATEGORY.TITLE_TRACK },
-  { id: "dummy-4", title: "ダミー曲4", category: CATEGORY.TITLE_TRACK },
-  { id: "dummy-5", title: "ダミー曲5", category: CATEGORY.TITLE_TRACK },
+  { id: "twinkle-star", title: "きらきら星", category: CATEGORY.TITLE_TRACK },
+  { id: "fur-elise", title: "エリーゼのために", category: CATEGORY.TITLE_TRACK },
+  { id: "ode-to-joy", title: "歓喜の歌", category: CATEGORY.TITLE_TRACK },
+  { id: "frere-jacques", title: "フレール・ジャック", category: CATEGORY.TITLE_TRACK },
+  { id: "london-bridge", title: "ロンドン橋", category: CATEGORY.TITLE_TRACK },
 ];
