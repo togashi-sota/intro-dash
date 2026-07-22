@@ -27,6 +27,7 @@ console.log("=LOVE イントロクイズ: main.js が読み込まれました");
 
 const startErrorElement = document.getElementById("start-error");
 const questionProgressElement = document.getElementById("question-progress");
+const progressDotsElement = document.getElementById("progress-dots");
 const choiceButtonElements = document.querySelectorAll(".choice-button");
 const feedbackElement = document.getElementById("feedback");
 const nextButtonElement = document.getElementById("next-button");
@@ -47,6 +48,33 @@ function showAudioError(message) {
 
 // 残り秒数がこの値以下になったら、緊迫感を出す演出に切り替える。
 const URGENT_THRESHOLD_SEC = 3;
+
+// 得点カウントアップ演出にかける時間。
+const SCORE_COUNT_UP_DURATION_MS = 800;
+
+// 合計得点を0から実際の点数まで、アニメーションしながらカウントアップ表示する。
+// 「モーションを減らす」設定が有効な環境では、演出をせず即座に最終的な点数を表示する。
+function animateScoreCountUp(finalScore) {
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (prefersReducedMotion) {
+    totalScoreElement.textContent = `合計得点: ${finalScore}点`;
+    return;
+  }
+
+  const startTime = performance.now();
+
+  function step(now) {
+    const progress = Math.min(1, (now - startTime) / SCORE_COUNT_UP_DURATION_MS);
+    const currentScore = Math.floor(finalScore * progress);
+    totalScoreElement.textContent = `合計得点: ${currentScore}点`;
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
 
 // タイマーの残り秒数表示を更新する。残りわずかになったら赤く拍動させる。
 function updateTimerDisplay(remainingSec) {
@@ -118,10 +146,27 @@ function handleChoiceClick(selectedChoice) {
   nextButtonElement.hidden = false;
 }
 
+// 出題の進み具合を示すドットを表示する。
+// 答え終えた問題は塗りつぶし、今の問題は少し大きく強調し、まだの問題は白抜きにする。
+function renderProgressDots() {
+  progressDotsElement.innerHTML = "";
+  gameState.questions.forEach((_, index) => {
+    const dot = document.createElement("span");
+    dot.classList.add("dot");
+    if (index < gameState.currentIndex) {
+      dot.classList.add("is-done");
+    } else if (index === gameState.currentIndex) {
+      dot.classList.add("is-current");
+    }
+    progressDotsElement.appendChild(dot);
+  });
+}
+
 // 今の問題の内容（進捗・4択の曲名）をクイズ画面に反映し、イントロ音源とタイマーを開始する。
 function renderQuestion() {
   const question = getCurrentQuestion();
   questionProgressElement.textContent = `第${gameState.currentIndex + 1}問 / ${gameState.questions.length}問`;
+  renderProgressDots();
 
   choiceButtonElements.forEach((button, index) => {
     button.textContent = question.choices[index].title;
@@ -138,8 +183,10 @@ function renderQuestion() {
 
 // 結果画面に、合計得点・自己ベスト・1問ごとの内訳を反映する。
 function renderResult() {
-  totalScoreElement.textContent = `合計得点: ${gameState.score}点`;
-  rankElement.textContent = `ランク: ${calculateRank(gameState.score, gameState.questions.length)}`;
+  animateScoreCountUp(gameState.score);
+  const rank = calculateRank(gameState.score, gameState.questions.length);
+  rankElement.textContent = `ランク: ${rank}`;
+  rankElement.classList.toggle("is-rank-s", rank === "S");
 
   const isNewRecord = saveHighScoreIfBetter(gameState.score);
   highScoreElement.textContent = `自己ベスト: ${getHighScore()}点`;

@@ -77,6 +77,22 @@ body {
   }
 }
 
+/* ===== タイトル周りの装飾 ===== */
+.app-logo {
+  display: block;
+  margin: 0 auto 4px;
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
 /* ===== 見出し ===== */
 h1 {
   margin-top: 0;
@@ -84,6 +100,16 @@ h1 {
   text-align: center;
   font-size: 1.8rem;
   font-weight: 800;
+}
+
+/* タイトルの左右に音符の飾りを添える */
+h1::before,
+h1::after {
+  content: "♪";
+  display: inline-block;
+  color: var(--color-accent);
+  font-size: 1.2rem;
+  margin: 0 8px;
 }
 
 h2 {
@@ -108,9 +134,51 @@ legend {
   padding: 0 6px;
 }
 
+/* ラジオボタン本体は見た目上は隠すが、キーボード操作や読み上げ機能のためにDOM上には残す */
+fieldset input[type="radio"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* labelタグ自体を、チップ（丸っこいボタン）風の見た目にする */
 fieldset label {
-  display: inline-block;
-  margin: 4px 12px 4px 0;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+  margin: 4px 6px 4px 0;
+  padding: 10px 18px;
+  border: 2px solid var(--color-primary);
+  border-radius: 999px;
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+}
+
+/* 選択されている項目は、ピンクで塗りつぶした状態にする */
+fieldset label:has(input:checked) {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+fieldset label:active {
+  transform: scale(0.96);
+}
+
+@media (hover: hover) {
+  fieldset label:hover {
+    box-shadow: 0 0 0 4px var(--color-primary-light);
+  }
+}
+
+/* キーボードのTabキーで選んだときも、見た目でどこにいるか分かるようにする */
+fieldset label:has(input:focus-visible) {
+  outline: 3px solid var(--color-primary-dark);
+  outline-offset: 2px;
 }
 
 /* ===== ボタン共通 ===== */
@@ -258,6 +326,36 @@ fieldset label {
   font-weight: 700;
 }
 
+/* 出題の進み具合を示すドット。答え終えた問題・今の問題・まだの問題で見た目を変える */
+.progress-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0 4px;
+}
+
+.progress-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  background-color: var(--color-surface);
+  transition: background-color var(--transition-fast), width var(--transition-fast), height var(--transition-fast);
+}
+
+.progress-dots .dot.is-done {
+  background-color: var(--color-primary);
+}
+
+.progress-dots .dot.is-current {
+  width: 14px;
+  height: 14px;
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
 #timer-display {
   text-align: center;
   font-size: 2rem;
@@ -311,6 +409,38 @@ fieldset label {
   font-weight: 800;
   color: var(--color-primary-dark);
   margin: 4px 0 8px;
+  animation: rankPop var(--transition-slow) ease-out;
+}
+
+/* Sランクだけ、金色に光らせて特別感を出す */
+#rank-display.is-rank-s {
+  font-size: 2.2rem;
+  background: linear-gradient(90deg, #d9a441, #fff3b0, #d9a441);
+  background-size: 200% auto;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  animation: rankPop var(--transition-slow) ease-out, rankShine 2s linear infinite;
+}
+
+@keyframes rankPop {
+  0% {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes rankShine {
+  to {
+    background-position: -200% center;
+  }
 }
 
 #high-score-display {
@@ -327,6 +457,7 @@ fieldset label {
   background-color: #fff8e1;
   border-radius: 8px;
   padding: 6px 12px;
+  animation: rankPop var(--transition-slow) ease-out;
 }
 
 #answer-log-list {

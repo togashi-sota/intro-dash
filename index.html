@@ -23,6 +23,8 @@
     <!-- スタート画面：出題数とカテゴリを選んでクイズを開始する画面 -->
     <!-- 今はまだ画面切り替えの仕組み（screens.js）がないので、is-active を付けて仮に表示している -->
     <section id="start-screen" class="screen is-active">
+      <!-- タイトルの飾り。ロゴ自体はfaviconと同じ絵柄で、装飾目的のため alt は空にしている -->
+      <img src="favicon.svg" alt="" class="app-logo" width="56" height="56">
       <h1>＝LOVE イントロクイズ</h1>
 
       <fieldset>
@@ -47,6 +49,9 @@
     <!-- クイズ画面：イントロ再生、4択、タイマー、正誤表示を行う画面 -->
     <section id="quiz-screen" class="screen">
       <p id="question-progress">第1問 / 5問</p>
+
+      <!-- 出題の進み具合を、丸(ドット)で視覚的に示す場所。中身はJSで生成する -->
+      <div id="progress-dots" class="progress-dots"></div>
 
       <!-- controls は付けず、シークして曲を先読みできないようにしている -->
       <audio id="intro-audio"></audio>
