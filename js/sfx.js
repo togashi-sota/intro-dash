@@ -22,3 +22,7 @@ export function playCorrectSound() {
 export function playWrongSound() {
   playSfx("wrong.mp3");
 }
+
+export function playCountUpSound() {
+  playSfx("score-countup.mp3");
+}

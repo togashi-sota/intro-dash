@@ -21,8 +21,10 @@ import { playSongIntro, stopAudio } from "./audio.js";
 import { startTimer, stopTimer } from "./timer.js";
 import { calculateScore, calculateRank } from "./score.js";
 import { getHighScore, saveHighScoreIfBetter } from "./highscore.js";
-import { playClickSound, playCorrectSound, playWrongSound } from "./sfx.js";
+import { playClickSound, playCorrectSound, playWrongSound, playCountUpSound } from "./sfx.js";
 
+const startScreenElement = document.getElementById("start-screen");
+const quizScreenElement = document.getElementById("quiz-screen");
 const startErrorElement = document.getElementById("start-error");
 const questionProgressElement = document.getElementById("question-progress");
 const progressDotsElement = document.getElementById("progress-dots");
@@ -59,6 +61,7 @@ function animateScoreCountUp(finalScore) {
     return;
   }
 
+  playCountUpSound();
   const startTime = performance.now();
 
   function step(now) {
@@ -256,4 +259,28 @@ document.getElementById("retry-button").addEventListener("click", () => {
   stopAudio();
   resetGameState();
   showScreen("start");
+});
+
+// キーボード操作対応。マウス・タップ操作は今まで通り使えるようにしたうえで、
+// 今表示されている画面に応じてキー入力を割り当てる。
+document.addEventListener("keydown", (event) => {
+  // スタート画面：Enterキーでスタート
+  if (startScreenElement.classList.contains("is-active") && event.key === "Enter") {
+    document.getElementById("start-button").click();
+    return;
+  }
+
+  if (quizScreenElement.classList.contains("is-active")) {
+    // クイズ画面：1〜4キーで、対応する選択肢を選ぶ
+    const choiceIndex = Number(event.key) - 1;
+    if (choiceIndex >= 0 && choiceIndex < choiceButtonElements.length) {
+      choiceButtonElements[choiceIndex].click();
+      return;
+    }
+
+    // クイズ画面：回答後（次へボタンが表示されているとき）にEnterキーで次の問題へ
+    if (event.key === "Enter" && !nextButtonElement.hidden) {
+      nextButtonElement.click();
+    }
+  }
 });
