@@ -21,6 +21,7 @@ import { playSongIntro, stopAudio } from "./audio.js";
 import { startTimer, stopTimer } from "./timer.js";
 import { calculateScore, calculateRank } from "./score.js";
 import { getHighScore, saveHighScoreIfBetter } from "./highscore.js";
+import { playClickSound, playCorrectSound, playWrongSound } from "./sfx.js";
 
 console.log("=LOVE イントロクイズ: main.js が読み込まれました");
 
@@ -44,9 +45,13 @@ function showAudioError(message) {
   audioErrorElement.hidden = false;
 }
 
-// タイマーの残り秒数表示を更新する。
+// 残り秒数がこの値以下になったら、緊迫感を出す演出に切り替える。
+const URGENT_THRESHOLD_SEC = 3;
+
+// タイマーの残り秒数表示を更新する。残りわずかになったら赤く拍動させる。
 function updateTimerDisplay(remainingSec) {
   timerDisplayElement.textContent = `残り: ${remainingSec}秒`;
+  timerDisplayElement.classList.toggle("is-urgent", remainingSec <= URGENT_THRESHOLD_SEC);
 }
 
 // 正解の選択肢に「is-correct」（キラキラ演出）、選んでしまった不正解の選択肢に
@@ -81,6 +86,7 @@ function handleTimeout() {
   const question = getCurrentQuestion();
   recordAnswer(false, 0);
   markChoiceButtons(null);
+  playWrongSound();
   feedbackElement.textContent = `時間切れ… 不正解（正解は「${question.song.title}」）`;
   feedbackElement.hidden = false;
   nextButtonElement.hidden = false;
@@ -99,6 +105,11 @@ function handleChoiceClick(selectedChoice) {
   const points = isCorrect ? calculateScore(gameState.remainingSec) : 0;
   recordAnswer(isCorrect, points);
   markChoiceButtons(selectedChoice.id);
+  if (isCorrect) {
+    playCorrectSound();
+  } else {
+    playWrongSound();
+  }
 
   feedbackElement.textContent = isCorrect
     ? `正解！ +${points}点`
@@ -157,6 +168,7 @@ choiceButtonElements.forEach((button, index) => {
 // 出題数・カテゴリの選択を読み取り、出題可能な曲プールを絞り込んで検証してから、
 // 問題一式を生成してクイズを開始する。
 document.getElementById("start-button").addEventListener("click", () => {
+  playClickSound();
   const questionCountValue = document.querySelector('input[name="question-count"]:checked').value;
   const categoryFilterValue = document.querySelector('input[name="category-filter"]:checked').value;
 
@@ -179,6 +191,7 @@ document.getElementById("start-button").addEventListener("click", () => {
 });
 
 document.getElementById("next-button").addEventListener("click", () => {
+  playClickSound();
   stopTimer();
   stopAudio();
 
@@ -193,6 +206,7 @@ document.getElementById("next-button").addEventListener("click", () => {
 });
 
 document.getElementById("retry-button").addEventListener("click", () => {
+  playClickSound();
   stopTimer();
   stopAudio();
   resetGameState();
