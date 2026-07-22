@@ -23,8 +23,6 @@ import { calculateScore, calculateRank } from "./score.js";
 import { getHighScore, saveHighScoreIfBetter } from "./highscore.js";
 import { playClickSound, playCorrectSound, playWrongSound } from "./sfx.js";
 
-console.log("=LOVE イントロクイズ: main.js が読み込まれました");
-
 const startErrorElement = document.getElementById("start-error");
 const questionProgressElement = document.getElementById("question-progress");
 const progressDotsElement = document.getElementById("progress-dots");
